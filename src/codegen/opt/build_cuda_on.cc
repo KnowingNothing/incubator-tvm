@@ -30,6 +30,7 @@
 #include <tvm/base.h>
 #include <nvrtc.h>
 #include <cstdlib>
+#include <fstream>  // for elena hacking
 
 #include "../codegen_cuda.h"
 #include "../build_common.h"
@@ -136,7 +137,34 @@ runtime::Module BuildCUDA(Array<LoweredFunc> funcs) {
   for (LoweredFunc f : funcs) {
     cg.AddFunction(f);
   }
-  std::string code = cg.Finish();
+  std::string code;
+
+  char *envptr = nullptr;
+  envptr = getenv("ELENA_WORK_PATH");
+  if (envptr != nullptr) {
+    printf("Elena hacking for cuda source, check work path: %s\n", envptr);
+    std::string root(envptr);
+    std::string src_path = root + "/source.cu";
+    std::string source;
+    std::fstream fsrc;
+    fsrc.open(src_path, std::ios::in);
+    if (!fsrc) {
+      printf("Cant open file %s\n", src_path.c_str());
+      exit(1);
+    }
+    code.append("#define uint64_t long long int\n");
+    while (!fsrc.eof()) {
+      char *tmp = new char[1000];
+      fsrc.getline(tmp, 1000);
+      code.append(tmp);
+      delete [] tmp;
+      code.append("\n");
+    }
+    printf("Check the source code:\n%s", code.c_str());
+    fsrc.close();
+  } else {
+    code = cg.Finish();
+  }
 
   if (const auto* f = Registry::Get("tvm_callback_cuda_postproc")) {
     code = (*f)(code).operator std::string();

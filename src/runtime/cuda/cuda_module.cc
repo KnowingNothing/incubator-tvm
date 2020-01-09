@@ -30,6 +30,7 @@
 #include <string>
 #include <mutex>
 #include <unordered_map>
+#include <fstream>  // used for elena hacking
 #include "cuda_common.h"
 #include "../pack_args.h"
 #include "../thread_storage_scope.h"
@@ -185,7 +186,37 @@ class CUDAWrappedFunc {
       fcache_[device_id] = m_->GetFunc(device_id, func_name_);
     }
     CUstream strm = static_cast<CUstream>(CUDAThreadEntry::ThreadLocal()->stream);
-    ThreadWorkLoad wl = thread_axis_cfg_.Extract(args);
+    // some modification for hack source code
+    ThreadWorkLoad wl;
+    char *envptr = nullptr;
+    envptr = getenv("ELENA_WORK_PATH");
+    if (envptr != nullptr) {
+      LOG(INFO) << envptr << "\n";
+      printf("Elena hacking for thread workload, check work path: %s\n", envptr);
+      std::string root(envptr);
+      std::string sch_path = root + "/schedule.txt";
+      std::fstream fsch;
+      int count_read = 0;
+      fsch.open(sch_path, std::ios::in);
+      if (!fsch) {
+        printf("Cant open file %s\n", sch_path.c_str());
+        exit(1);
+      }
+      while (!fsch.eof()) {
+        if (count_read >= 6) {
+          printf("Too many values in file %s, expect 6\n", sch_path.c_str());
+          break;
+        }
+        fsch >> wl.work_size[count_read++];
+      }
+      if (count_read != 6) {
+        printf("Not enough values in file %s, expect 6 but got %d\n", sch_path, count_read);
+        exit(1);
+      }
+      fsch.close();
+    } else {
+      wl = thread_axis_cfg_.Extract(args);
+    }
     CUresult result = cuLaunchKernel(
         fcache_[device_id],
         wl.grid_dim(0),
