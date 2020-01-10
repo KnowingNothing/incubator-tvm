@@ -30,6 +30,7 @@
 #include <tvm/base.h>
 #include <nvrtc.h>
 #include <cstdlib>
+#include <string>
 #include <fstream>  // for elena hacking
 
 #include "../codegen_cuda.h"
@@ -154,10 +155,9 @@ runtime::Module BuildCUDA(Array<LoweredFunc> funcs) {
     }
     code.append("#define uint64_t long long int\n");
     while (!fsrc.eof()) {
-      char *tmp = new char[1000];
-      fsrc.getline(tmp, 1000);
+      std::string tmp;
+      std::getline(fsrc, tmp);
       code.append(tmp);
-      delete [] tmp;
       code.append("\n");
     }
     printf("Check the source code:\n%s", code.c_str());
