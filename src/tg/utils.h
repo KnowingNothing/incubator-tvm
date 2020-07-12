@@ -54,6 +54,32 @@ namespace tg {
 //     return f(unpackvec.unpack<Args>()...);
 // }
 
+template<typename Function, typename Tuple, size_t ... I>
+void call(Function f, Tuple t, std::index_sequence<I ...>) {
+     f(std::get<I>(t) ...);
+}
+
+template<typename Function, typename Tuple>
+void call(Function f, Tuple t) {
+    static constexpr auto size = std::tuple_size<Tuple>::value;
+    return call(f, t, std::make_index_sequence<size>());
+}
+
+template<typename Function, typename T, typename Tuple>
+void call_function(Function f, std::vector<T> &v, Tuple t) {
+  if (v.empty()) call(f, t);
+  else {
+    auto new_t = std::tuple_cat(std::make_tuple(v.back()), t);
+    v.pop_back();
+    call_function(f, v, t);
+  }
+}
+
+template<typename Function, typename T>
+void call_function(Function f, std::vector<T> v) {
+  auto t = std::make_tuple();
+  call_function(f, v, t);
+}
 
 class ThreadPool {
 public:

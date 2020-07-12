@@ -106,7 +106,7 @@ void Session::run_functions(
 
       bool succ = false;
       auto subgraph = multi_graph->graphs[key];
-      Array<tvm::runtime::NDArray> arrays;
+      std::vector<tvm::runtime::NDArray> arrays;
       for (auto tt : subgraph->inputs) {
         te::Tensor t = multi_graph.Self()->tensor_index[tt];
         if (bindings[ad].find(t) != bindings[ad].end()) {
@@ -200,9 +200,10 @@ void Session::run_functions(
 
               // call_function(func, arrays);
               auto future = ThreadPool::Global().push_back(
-                [call_unpack](tvm::runtime::PackedFunc& f, Array<tvm::runtime::NDArray>& v) {
+                [call_unpack](tvm::runtime::PackedFunc& f, std::vector<tvm::runtime::NDArray>& v) {
                   auto start = std::chrono::steady_clock::now();
-                  (*call_unpack)(f, v);
+                  //(*call_unpack)(f, v);
+                  call_function(f, v);
                   auto end = std::chrono::steady_clock::now();
                   float elapsed_time = (float)((end - start).count());
                   return elapsed_time;
@@ -254,7 +255,8 @@ void Session::run_functions(
         if (!succ) {
           if (best_functions.find(key) != best_functions.end()) {
             auto func = best_functions[key].first->GetFunction(get_func_name(key));
-            (*call_unpack)(func, arrays);
+            //(*call_unpack)(func, arrays);
+            call_function(func, arrays);
             succ = true;
           }
         }
