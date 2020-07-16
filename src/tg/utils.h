@@ -13,6 +13,7 @@
 #include <utility>
 #include <tuple>
 #include <chrono>
+#include <pthread.h>
 
 #include <tvm/te/operation.h>
 #include <tvm/te/schedule.h>
