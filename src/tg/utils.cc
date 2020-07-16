@@ -5,7 +5,7 @@ namespace tvm {
 
 namespace tg {
 
-inline ThreadPool::ThreadPool(size_t threads=std::thread::hardware_concurrency()) : stop(false) {
+inline ThreadPool::ThreadPool(size_t threads=std::thread::hardware_concurrency(), unsigned int _timeout = 300) : stop(false), timeout(_timeout) {
     for(size_t i = 0;i<threads;++i) {
         workers.emplace_back(
             [this] {

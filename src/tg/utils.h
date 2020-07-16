@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <utility>
 #include <tuple>
+#include <chrono>
 
 #include <tvm/te/operation.h>
 #include <tvm/te/schedule.h>
@@ -55,18 +56,18 @@ namespace tg {
 // }
 
 template<typename Function, typename Tuple, size_t ... I>
-void call(Function f, Tuple t, std::index_sequence<I ...>) {
+void call(Function f, Tuple &t, std::index_sequence<I ...>) {
      f(std::get<I>(t) ...);
 }
 
 template<typename Function, typename Tuple>
-void call(Function f, Tuple t) {
+void call(Function f, Tuple &t) {
     static constexpr auto size = std::tuple_size<Tuple>::value;
     return call(f, t, std::make_index_sequence<size>());
 }
 
 template<typename Function, typename T, typename Tuple>
-void call_function(Function f, std::vector<T> &v, Tuple t) {
+void call_function(Function f, std::vector<T> &v, Tuple &t) {
   if (v.empty()) call(f, t);
   else {
     auto new_t = std::tuple_cat(std::make_tuple(v.back()), t);
@@ -83,7 +84,7 @@ void call_function(Function f, std::vector<T> v) {
 
 class ThreadPool {
 public:
-    ThreadPool(size_t);
+    ThreadPool(size_t, unsigned int);
 
     template<typename FType, typename... Args>
     auto push_front(FType&& f, Args&&... args) -> std::future<typename std::result_of<FType(Args...)>::type> {
@@ -100,7 +101,11 @@ public:
           if(stop)
               throw std::runtime_error("push_front on stopped ThreadPool");
 
-          tasks.emplace_front([task](){ (*task)(); });
+          tasks.emplace_back([task, this](){
+            std::thread th([task](){ (*task)(); });
+            std::this_thread::sleep_for(std::chrono::milliseconds(this->timeout));
+            pthread_cancel(th.native_handle());
+          });
       }
       condition.notify_one();
       return res;
@@ -121,7 +126,11 @@ public:
           if(stop)
               throw std::runtime_error("push_back on stopped ThreadPool");
 
-          tasks.emplace_back([task](){ (*task)(); });
+          tasks.emplace_back([task, this](){
+            std::thread th([task](){ (*task)(); });
+            std::this_thread::sleep_for(std::chrono::milliseconds(this->timeout));
+            pthread_cancel(th.native_handle());
+          });
       }
       condition.notify_one();
       return res;
@@ -140,6 +149,8 @@ private:
     std::mutex deque_mutex;
     std::condition_variable condition;
     bool stop;
+
+    unsigned int timeout;
 
     static const int REFRESH_EPOCH = 128;
 };
