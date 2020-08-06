@@ -663,6 +663,8 @@ void Session::run_build(int task_id, TIRMultiGraph multi_graph, int advance_numb
         free_set.insert(new_cand);
       }
       print(4, build_log) << "\n";
+      print(4, build_log) << "free set size: " << free_set.size() << "\n";
+      print(4, build_log) << "allow missing " << allow_missing << "\n";
     }  // end while (!free_set.empty())
     
     // make sure that every subgraph is handled

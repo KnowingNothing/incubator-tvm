@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 
 #include "interpreter.h"
 #include "auto_schedule.h"
@@ -81,6 +82,7 @@ void AutoScheduler::auto_schedule(
   te::Schedule sch;
   Array<te::Tensor> tensors;
   std::tie(sch, tensors) = empty_schedule(subgraph);
+  std::cerr << "Enter autoschedule\n" << subgraph->tag << "\n";
 
   /* the schedule logic
    * a schedule is two-level: skeleton + paramter
@@ -150,18 +152,24 @@ void AutoScheduler::auto_schedule(
     must_new = false;  // the second round, just relaxed
   }
 
+  std::cerr << "find new candidates!\n";
   // choose from new candidates
   double best_value = -1;
   int best_ind = -1;
   int num_new_candidates = (int)new_candidates.size();
   Array<te::Schedule> tmp_schedules;
   for (int i = 0; i < num_new_candidates; ++i) {
+    std::cerr << i << '/' << num_new_candidates << '\n';
     te::Schedule tmp_sch = te::create_schedule(subgraph->root_ops);
+    std::cerr << "interpret" << '\n' /*<< subgraph->tag << '\n'*/ << context->target << '\n'/* << new_candidates[i].to_string() << '\n'*/;
     interpret(tmp_sch, tensors, subgraph, context->target, new_candidates[i]);
+    std::cerr << "End interpret";
     tmp_schedules.push_back(tmp_sch);
   }
   double gflop = 1;
+  std::cerr << "judge schedule\n";
   std::vector<double> tmp_judges = judge_schedule(tmp_schedules, tensors, context->target, gflop, context->policy);
+  std::cerr << "profile start\n"; 
   for (int i = 0; i < num_new_candidates; ++i) {
     if (context->policy == "profile") {
       context.add_feedback(ScheduleResult(tmp_schedules[i], tensors, new_candidates[i]), tmp_judges[i]);
@@ -186,6 +194,7 @@ void AutoScheduler::auto_schedule(
   interpret(sch, tensors, subgraph, context->target, result_entity);
   results = ScheduleResult(sch, tensors, new_candidates[best_ind]);
   context->counts += 1;
+  std::cerr << "finish!\n";
 }
 
 
