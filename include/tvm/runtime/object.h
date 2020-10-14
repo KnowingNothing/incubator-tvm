@@ -481,6 +481,7 @@ class ObjectPtr {
   friend class Object;
   friend class ObjectRef;
   friend struct ObjectHash;
+  friend struct ObjectPtrHash;
   template<typename>
   friend class ObjectPtr;
   template<typename>
@@ -604,6 +605,7 @@ class ObjectRef {
     return ObjectPtr<ObjectType>(ref.data_.data_);
   }
   // friend classes.
+  friend struct ObjectPtrHash;
   friend struct ObjectHash;
   friend class TVMRetValue;
   friend class TVMArgsSetter;
@@ -621,6 +623,26 @@ class ObjectRef {
  */
 template <typename BaseType, typename ObjectType>
 inline ObjectPtr<BaseType> GetObjectPtr(ObjectType* ptr);
+
+/*! \brief ObjectRef hash functor */
+struct ObjectPtrHash {
+  size_t operator()(const ObjectRef& a) const { return operator()(a.data_); }
+
+  template <typename T>
+  size_t operator()(const ObjectPtr<T>& a) const {
+    return std::hash<Object*>()(a.get());
+  }
+};
+
+/*! \brief ObjectRef equal functor */
+struct ObjectPtrEqual {
+  bool operator()(const ObjectRef& a, const ObjectRef& b) const { return a.same_as(b); }
+
+  template <typename T>
+  size_t operator()(const ObjectPtr<T>& a, const ObjectPtr<T>& b) const {
+    return a == b;
+  }
+};
 
 /*! \brief ObjectRef hash functor */
 struct ObjectHash {
