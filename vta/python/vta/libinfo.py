@@ -68,6 +68,8 @@ def find_libvta(lib_vta, optional=False):
             "build",
         )
     ]
+    if os.environ.get("VTA_LIBRARY_PATH", None):
+        lib_search.append(os.environ["TVM_LIBRARY_PATH"])
     lib_search += [os.path.join(get_vta_hw_path(), "build")]
     lib_name = _get_lib_name(lib_vta)
     lib_path = [os.path.join(x, lib_name) for x in lib_search]
