@@ -62,6 +62,13 @@ def get_lib_path():
                 libs.append(candidate_path)
                 break
 
+        # Add microTVM template projects
+        for name in lib_path:
+            candidate_path = os.path.join(os.path.dirname(name), "microtvm_template_projects")
+            if os.path.isdir(candidate_path):
+                libs.append(candidate_path)
+                break
+
     else:
         libs = None
 
@@ -166,7 +173,7 @@ if wheel_include_libs:
             if os.path.isfile(path):
                 shutil.copy(path, os.path.join(CURRENT_DIR, "tvm"))
                 _, libname = os.path.split(path)
-                fo.write(f"include tvm/{libname}%s")
+                fo.write(f"include tvm/{libname}\n")
 
             if os.path.isdir(path):
                 _, libname = os.path.split(path)

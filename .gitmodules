@@ -13,3 +13,6 @@
 [submodule "3rdparty/libbacktrace"]
 	path = 3rdparty/libbacktrace
 	url = git@github.com:tlc-pack/libbacktrace.git
+[submodule "3rdparty/cutlass"]
+	path = 3rdparty/cutlass
+	url = git@github.com:NVIDIA/cutlass.git
