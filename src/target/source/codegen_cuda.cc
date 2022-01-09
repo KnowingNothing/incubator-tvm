@@ -731,9 +731,7 @@ void CodeGenCUDA::VisitExpr_(const CallNode* op, std::ostream& os) {
     std::string a_ref = this->PrintExpr(op->args[1]);
     std::string b_ref = this->PrintExpr(op->args[2]);
     std::string c_ref = this->PrintExpr(op->args[3]);
-    // a_ref = "((unsigned *)(" + a_ref + "))";
-    // b_ref = "((unsigned *)(" + b_ref + "))";
-    // c_ref = "((float *)(" + c_ref + "))";
+
     std::string asm_code = R"(
       {
         unsigned const* A = reinterpret_cast<unsigned const *>(a_ref);
@@ -750,25 +748,11 @@ void CodeGenCUDA::VisitExpr_(const CallNode* op, std::ostream& os) {
               "f"(C[3]), "f"(C[4]), "f"(C[5]), "f"(C[6]), "f"(C[7]));
       }
     )";
-    // std::string asm_code = R"(
-    //   {
-    //     __asm__ __volatile__(
-    //         "mma.sync.aligned.m8n8k4.row.row.f32.f16.f16.f32 {%0,%1,%2,%3,%4,%5,%6,%7}, {%8,%9}, "
-    //         "{%10,%11}, "
-    //         "{%12,%13,%14,%15,%16,%17,%18,%19};\n"
-    //         : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3]), "=f"(D[4]), "=f"(D[5]), "=f"(D[6]),
-    //           "=f"(D[7])
-    //         : "r"(A[0]), "r"(A[1]), "r"(B[0]), "r"(B[1]), "f"(C[0]), "f"(C[1]), "f"(C[2]),
-    //           "f"(C[3]), "f"(C[4]), "f"(C[5]), "f"(C[6]), "f"(C[7]));
-    //   }
-    // )";
+
     asm_code = std::regex_replace(asm_code, std::regex("a_ref"), a_ref);
     asm_code = std::regex_replace(asm_code, std::regex("b_ref"), b_ref);
     asm_code = std::regex_replace(asm_code, std::regex("c_ref"), c_ref);
-    // asm_code = std::regex_replace(asm_code, std::regex("A"), a_ref);
-    // asm_code = std::regex_replace(asm_code, std::regex("B"), b_ref);
-    // asm_code = std::regex_replace(asm_code, std::regex("C"), c_ref);
-    // asm_code = std::regex_replace(asm_code, std::regex("D"), c_ref);
+
     this->stream << asm_code;
   } else {
     CodeGenC::VisitExpr_(op, os);
