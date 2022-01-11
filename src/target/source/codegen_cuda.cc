@@ -1254,6 +1254,7 @@ void CodeGenCUDA::VisitExpr_(const CallNode* op, std::ostream& os) {
       ICHECK(((A_dtype == "fp16") && (B_dtype == "fp16")) ||
              ((A_dtype == "bf16") && (B_dtype == "bf16")) ||
              ((A_dtype == "int8") && (B_dtype == "int8")) ||
+             ((A_dtype == "uint8") && (B_dtype == "int8")) ||
              ((A_dtype == "int8") && (B_dtype == "uint8")) ||
              ((A_dtype == "uint8") && (B_dtype == "uint8")));
       if ((A_dtype == "fp16") && (B_dtype == "fp16")) {
