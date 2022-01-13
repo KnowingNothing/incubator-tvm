@@ -21,6 +21,7 @@ import pytest
 import tvm
 from tvm.script import tir as T
 import numpy as np
+import tvm.testing
 
 
 @T.prim_func
@@ -44,8 +45,7 @@ def gemm_mma_m8n8k4_row_col_fp64pf64fp64(a: T.handle, b: T.handle, c: T.handle):
     MultiA[0] = A[(tx % 32) // 4, (tx % 32) % 4]
     MultiB[0] = B[(tx % 32) // 4, (tx % 32) % 4]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k4",
             "row",
             "col",
@@ -68,12 +68,15 @@ def gemm_mma_m8n8k4_row_col_fp64pf64fp64(a: T.handle, b: T.handle, c: T.handle):
         )
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m8n8k4_row_col_fp64pf64fp64():
     sch = tvm.tir.Schedule(gemm_mma_m8n8k4_row_col_fp64pf64fp64)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     A_np = np.random.uniform(-1, 1, [8, 4]).astype("float64")
     B_np = np.random.uniform(-1, 1, [8, 4]).astype("float64")
@@ -88,7 +91,7 @@ def test_gemm_mma_m8n8k4_row_col_fp64pf64fp64():
 
     golden = np.matmul(A_np.astype("float64"), B_np.astype("float64").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
     from tvm import testing
 
     testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
@@ -123,8 +126,7 @@ def gemm_mma_m8n8k4_row_row_fp16fp16fp16(a: T.handle, b: T.handle, c: T.handle):
             mma_multi_b_col + (4 * ((tx % 32) // 8)),
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k4",
             "row",
             "row",
@@ -148,12 +150,15 @@ def gemm_mma_m8n8k4_row_row_fp16fp16fp16(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("float16", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m8n8k4_row_row_fp16fp16fp16():
     sch = tvm.tir.Schedule(gemm_mma_m8n8k4_row_row_fp16fp16fp16)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 7:
+        # Require at least SM70
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     A_np = np.random.uniform(-1, 1, [16, 4]).astype("float16")
     B_np = np.random.uniform(-1, 1, [4, 16]).astype("float16")
@@ -168,7 +173,7 @@ def test_gemm_mma_m8n8k4_row_row_fp16fp16fp16():
 
     golden = np.matmul(A_np.astype("float16"), B_np.astype("float16"))
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -204,8 +209,7 @@ def gemm_mma_m8n8k4_row_row_fp16fp16fp32(a: T.handle, b: T.handle, c: T.handle):
             mma_multi_b_col + (4 * ((tx % 32) // 8)),
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k4",
             "row",
             "row",
@@ -235,12 +239,15 @@ def gemm_mma_m8n8k4_row_row_fp16fp16fp32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("float32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m8n8k4_row_row_fp16fp16fp32():
     sch = tvm.tir.Schedule(gemm_mma_m8n8k4_row_row_fp16fp16fp32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 7:
+        # Require at least SM70
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     A_np = np.random.uniform(-1, 1, [16, 4]).astype("float16")
     B_np = np.random.uniform(-1, 1, [4, 16]).astype("float16")
@@ -255,7 +262,7 @@ def test_gemm_mma_m8n8k4_row_row_fp16fp16fp32():
 
     golden = np.matmul(A_np.astype("float32"), B_np.astype("float32"))
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
     from tvm import testing
 
     testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
@@ -284,8 +291,7 @@ def gemm_mma_m8n8k16_row_col_s8s8s32(a: T.handle, b: T.handle, c: T.handle):
     for mma_multi_b_col in T.vectorized(4):
         MultiB[mma_multi_b_col] = B[(tx % 32) // 4, mma_multi_b_col + (tx % 32) % 4 * 4]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k16",
             "row",
             "col",
@@ -308,12 +314,15 @@ def gemm_mma_m8n8k16_row_col_s8s8s32(a: T.handle, b: T.handle, c: T.handle):
         )
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m8n8k16_row_col_s8s8s32():
     sch = tvm.tir.Schedule(gemm_mma_m8n8k16_row_col_s8s8s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major * 10 + minor < 75:
+        # Require at least SM75
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     A_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
@@ -328,7 +337,7 @@ def test_gemm_mma_m8n8k16_row_col_s8s8s32():
 
     golden = np.matmul(A_np.astype("int32"), B_np.astype("int32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -358,8 +367,7 @@ def gemm_mma_m8n8k16_row_col_s8u8s32(a: T.handle, b: T.handle, c: T.handle):
     for mma_multi_b_col in T.vectorized(4):
         MultiB[mma_multi_b_col] = B[(tx % 32) // 4, mma_multi_b_col + (tx % 32) % 4 * 4]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k16",
             "row",
             "col",
@@ -382,12 +390,15 @@ def gemm_mma_m8n8k16_row_col_s8u8s32(a: T.handle, b: T.handle, c: T.handle):
         )
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m8n8k16_row_col_s8u8s32():
     sch = tvm.tir.Schedule(gemm_mma_m8n8k16_row_col_s8u8s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major * 10 + minor < 75:
+        # Require at least SM75
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     A_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("uint8")
@@ -402,7 +413,7 @@ def test_gemm_mma_m8n8k16_row_col_s8u8s32():
 
     golden = np.matmul(A_np.astype("int32"), B_np.astype("int32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -432,8 +443,7 @@ def gemm_mma_m8n8k32_row_col_s4s4s32(a: T.handle, b: T.handle, c: T.handle):
     for mma_multi_b_col in T.vectorized(8):
         MultiB[mma_multi_b_col] = B[(tx % 32) // 4, mma_multi_b_col + (tx % 32) % 4 * 8]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k32",
             "row",
             "col",
@@ -456,12 +466,15 @@ def gemm_mma_m8n8k32_row_col_s4s4s32(a: T.handle, b: T.handle, c: T.handle):
         )
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m8n8k32_row_col_s4s4s32():
     sch = tvm.tir.Schedule(gemm_mma_m8n8k32_row_col_s4s4s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major * 10 + minor < 75:
+        # Require at least SM75
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.empty([8, 32], "int4", ctx)
@@ -469,6 +482,8 @@ def test_gemm_mma_m8n8k32_row_col_s4s4s32():
     C_tvm = tvm.nd.empty([8, 8], "int32", ctx)
 
     cuda_mod(A_tvm, B_tvm, C_tvm)
+    # Currently the correctness is not checked.
+    # TODO: add correctness checking here.
 
 
 @T.prim_func
@@ -494,8 +509,7 @@ def gemm_mma_m8n8k32_row_col_s4u4s32(a: T.handle, b: T.handle, c: T.handle):
     for mma_multi_b_col in T.vectorized(8):
         MultiB[mma_multi_b_col] = B[(tx % 32) // 4, mma_multi_b_col + (tx % 32) % 4 * 8]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k32",
             "row",
             "col",
@@ -518,12 +532,15 @@ def gemm_mma_m8n8k32_row_col_s4u4s32(a: T.handle, b: T.handle, c: T.handle):
         )
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m8n8k32_row_col_s4u4s32():
     sch = tvm.tir.Schedule(gemm_mma_m8n8k32_row_col_s4u4s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major * 10 + minor < 75:
+        # Require at least SM75
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.empty([8, 32], "int4", ctx)
@@ -531,6 +548,8 @@ def test_gemm_mma_m8n8k32_row_col_s4u4s32():
     C_tvm = tvm.nd.empty([8, 8], "int32", ctx)
 
     cuda_mod(A_tvm, B_tvm, C_tvm)
+    # Currently the correctness is not checked.
+    # TODO: add correctness checking here.
 
 
 @T.prim_func
@@ -560,8 +579,7 @@ def gemm_mma_m16n8k8_row_col_fp16fp16fp32(a: T.handle, b: T.handle, c: T.handle)
             (tx % 32) // 4 + mma_multi_b_col // 2 * 8, (tx % 32) % 4 * 2 + mma_multi_b_col % 2
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k8",
             "row",
             "col",
@@ -584,12 +602,15 @@ def gemm_mma_m16n8k8_row_col_fp16fp16fp32(a: T.handle, b: T.handle, c: T.handle)
         ] = T.load("float32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k8_row_col_fp16fp16fp32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k8_row_col_fp16fp16fp32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
 
     A_np = np.random.uniform(-1, 1, [16, 8]).astype("float16")
     B_np = np.random.uniform(-1, 1, [8, 8]).astype("float16")
@@ -604,7 +625,7 @@ def test_gemm_mma_m16n8k8_row_col_fp16fp16fp32():
 
     golden = np.matmul(A_np.astype("float32"), B_np.astype("float32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
     from tvm import testing
 
     testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
@@ -639,8 +660,7 @@ def gemm_mma_m16n8k16_row_col_fp16fp16fp16(a: T.handle, b: T.handle, c: T.handle
             (tx % 32) % 4 * 2 + mma_multi_b_col % 2 + mma_multi_b_col // 2 * 8,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k16",
             "row",
             "col",
@@ -664,12 +684,16 @@ def gemm_mma_m16n8k16_row_col_fp16fp16fp16(a: T.handle, b: T.handle, c: T.handle
         ] = T.load("float16", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k16_row_col_fp16fp16fp16():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k16_row_col_fp16fp16fp16)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     A_np = np.random.uniform(-1, 1, [16, 16]).astype("float16")
     B_np = np.random.uniform(-1, 1, [8, 16]).astype("float16")
@@ -684,7 +708,7 @@ def test_gemm_mma_m16n8k16_row_col_fp16fp16fp16():
 
     golden = np.matmul(A_np.astype("float16"), B_np.astype("float16").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -720,8 +744,7 @@ def gemm_mma_m16n8k16_row_col_fp16fp16fp32(a: T.handle, b: T.handle, c: T.handle
             (tx % 32) % 4 * 2 + mma_multi_b_col % 2 + mma_multi_b_col // 2 * 8,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k16",
             "row",
             "col",
@@ -745,12 +768,16 @@ def gemm_mma_m16n8k16_row_col_fp16fp16fp32(a: T.handle, b: T.handle, c: T.handle
         ] = T.load("float32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k16_row_col_fp16fp16fp32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k16_row_col_fp16fp16fp32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     A_np = np.random.uniform(-1, 1, [16, 16]).astype("float16")
     B_np = np.random.uniform(-1, 1, [8, 16]).astype("float16")
@@ -765,7 +792,7 @@ def test_gemm_mma_m16n8k16_row_col_fp16fp16fp32():
 
     golden = np.matmul(A_np.astype("float32"), B_np.astype("float32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -801,8 +828,7 @@ def gemm_mma_m16n8k16_row_col_s8s8s32(a: T.handle, b: T.handle, c: T.handle):
             (tx % 32) % 4 * 4 + mma_multi_b_col,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k16",
             "row",
             "col",
@@ -826,12 +852,16 @@ def gemm_mma_m16n8k16_row_col_s8s8s32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("int32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k16_row_col_s8s8s32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k16_row_col_s8s8s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     A_np = np.random.uniform(-10, 10, [16, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
@@ -846,7 +876,7 @@ def test_gemm_mma_m16n8k16_row_col_s8s8s32():
 
     golden = np.matmul(A_np.astype("int32"), B_np.astype("int32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -882,8 +912,7 @@ def gemm_mma_m16n8k16_row_col_s8u8s32(a: T.handle, b: T.handle, c: T.handle):
             (tx % 32) % 4 * 4 + mma_multi_b_col,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k16",
             "row",
             "col",
@@ -907,12 +936,16 @@ def gemm_mma_m16n8k16_row_col_s8u8s32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("int32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k16_row_col_s8u8s32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k16_row_col_s8u8s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     A_np = np.random.uniform(-10, 10, [16, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("uint8")
@@ -927,7 +960,7 @@ def test_gemm_mma_m16n8k16_row_col_s8u8s32():
 
     golden = np.matmul(A_np.astype("int32"), B_np.astype("int32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -963,8 +996,7 @@ def gemm_mma_m16n8k32_row_col_s8s8s32(a: T.handle, b: T.handle, c: T.handle):
             (tx % 32) % 4 * 4 + mma_multi_b_col % 4 + mma_multi_b_col // 4 * 16,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k32",
             "row",
             "col",
@@ -988,12 +1020,16 @@ def gemm_mma_m16n8k32_row_col_s8s8s32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("int32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k32_row_col_s8s8s32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k32_row_col_s8s8s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     A_np = np.random.uniform(-10, 10, [16, 32]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 32]).astype("int8")
@@ -1008,7 +1044,7 @@ def test_gemm_mma_m16n8k32_row_col_s8s8s32():
 
     golden = np.matmul(A_np.astype("int32"), B_np.astype("int32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -1044,8 +1080,7 @@ def gemm_mma_m16n8k32_row_col_s8u8s32(a: T.handle, b: T.handle, c: T.handle):
             (tx % 32) % 4 * 4 + mma_multi_b_col % 4 + mma_multi_b_col // 4 * 16,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k32",
             "row",
             "col",
@@ -1069,12 +1104,16 @@ def gemm_mma_m16n8k32_row_col_s8u8s32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("int32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k32_row_col_s8u8s32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k32_row_col_s8u8s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     A_np = np.random.uniform(-10, 10, [16, 32]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 32]).astype("uint8")
@@ -1089,7 +1128,7 @@ def test_gemm_mma_m16n8k32_row_col_s8u8s32():
 
     golden = np.matmul(A_np.astype("int32"), B_np.astype("int32").T)
 
-    C_numpy = C_tvm.asnumpy()
+    C_numpy = C_tvm.numpy()
 
     from tvm import testing
 
@@ -1125,8 +1164,7 @@ def gemm_mma_m16n8k64_row_col_s4s4s32(a: T.handle, b: T.handle, c: T.handle):
             (tx % 32) % 4 * 8 + mma_multi_b_col % 8 + mma_multi_b_col // 8 * 32,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k32",
             "row",
             "col",
@@ -1150,12 +1188,16 @@ def gemm_mma_m16n8k64_row_col_s4s4s32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("int32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k64_row_col_s4s4s32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k64_row_col_s4s4s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.empty([16, 64], "int4", ctx)
@@ -1163,6 +1205,8 @@ def test_gemm_mma_m16n8k64_row_col_s4s4s32():
     C_tvm = tvm.nd.empty([16, 8], "int32", ctx)
 
     cuda_mod(A_tvm, B_tvm, C_tvm)
+    # Currently the correctness is not checked.
+    # TODO: add correctness checking here.
 
 
 @T.prim_func
@@ -1194,8 +1238,7 @@ def gemm_mma_m16n8k64_row_col_s4u4s32(a: T.handle, b: T.handle, c: T.handle):
             (tx % 32) % 4 * 8 + mma_multi_b_col % 8 + mma_multi_b_col // 8 * 32,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m8n8k32",
             "row",
             "col",
@@ -1219,12 +1262,16 @@ def gemm_mma_m16n8k64_row_col_s4u4s32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("int32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k64_row_col_s4u4s32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k64_row_col_s4u4s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.empty([16, 64], "int4", ctx)
@@ -1232,6 +1279,8 @@ def test_gemm_mma_m16n8k64_row_col_s4u4s32():
     C_tvm = tvm.nd.empty([16, 8], "int32", ctx)
 
     cuda_mod(A_tvm, B_tvm, C_tvm)
+    # Currently the correctness is not checked.
+    # TODO: add correctness checking here.
 
 
 @T.prim_func
@@ -1263,8 +1312,7 @@ def gemm_mma_m16n8k256_row_col_b1b1s32(a: T.handle, b: T.handle, c: T.handle):
             (tx % 32) % 4 * 32 + mma_multi_b_col % 32 + mma_multi_b_col // 32 * 128,
         ]
     T.evaluate(
-        T.call_extern(
-            "ptx_mma",
+        T.ptx_mma(
             "m16n8k256",
             "row",
             "col",
@@ -1288,12 +1336,16 @@ def gemm_mma_m16n8k256_row_col_b1b1s32(a: T.handle, b: T.handle, c: T.handle):
         ] = T.load("int32", Accum, mma_accum_c_id)
 
 
-@pytest.mark.basic
+@tvm.testing.requires_cuda
 def test_gemm_mma_m16n8k256_row_col_b1b1s32():
     sch = tvm.tir.Schedule(gemm_mma_m16n8k256_row_col_b1b1s32)
-    print(sch.mod.script())
+    arch = tvm.contrib.nvcc.get_target_compute_version()
+    major, minor = tvm.contrib.nvcc.parse_compute_version(arch)
+    if major < 8:
+        # Require at least SM80
+        return
     cuda_mod = tvm.build(sch.mod, target="cuda")
-    print(cuda_mod.imported_modules[0].get_source())
+    cuda_mod = tvm.build(sch.mod, target="cuda")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.empty([16, 256], "int1", ctx)
@@ -1301,6 +1353,8 @@ def test_gemm_mma_m16n8k256_row_col_b1b1s32():
     C_tvm = tvm.nd.empty([16, 8], "int32", ctx)
 
     cuda_mod(A_tvm, B_tvm, C_tvm)
+    # Currently the correctness is not checked.
+    # TODO: add correctness checking here.
 
 
 if __name__ == "__main__":
