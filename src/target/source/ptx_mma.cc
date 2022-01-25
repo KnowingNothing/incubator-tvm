@@ -26,6 +26,18 @@
 namespace tvm {
 namespace codegen {
 
+std::string ReplaceMMAArgument(std::string asm_code, const std::string& original,
+                               const std::string& new_arg) {
+  size_t len = original.size();
+  size_t new_len = new_arg.size();
+  size_t pos = asm_code.find(original);
+  while (pos != std::string::npos) {
+    asm_code = asm_code.replace(pos, len, new_arg);
+    pos = asm_code.find(original, pos + new_len);
+  }
+  return asm_code;
+}
+
 std::string PrintMMAm8n8k4Assembly(const std::string& A_layout, const std::string& B_layout,
                                    const std::string& A_dtype, const std::string& B_dtype,
                                    const std::string& C_dtype, const std::string& a_ref,
@@ -99,12 +111,12 @@ std::string PrintMMAm8n8k4Assembly(const std::string& A_layout, const std::strin
           }
         )";
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -182,12 +194,12 @@ std::string PrintMMAm16n8k8Assembly(const std::string& A_layout, const std::stri
           }
         )";
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -368,12 +380,12 @@ std::string PrintMMAm8n8k16Assembly(const std::string& A_layout, const std::stri
           )";
     }
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -554,12 +566,12 @@ std::string PrintMMAm8n8k32Assembly(const std::string& A_layout, const std::stri
           )";
     }
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -596,12 +608,12 @@ std::string PrintMMAm16n8k4Assembly(const std::string& A_layout, const std::stri
                 "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]));
         }
       )";
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -849,12 +861,12 @@ std::string PrintMMAm16n8k16Assembly(const std::string& A_layout, const std::str
           )";
     }
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -1043,12 +1055,12 @@ std::string PrintMMAm16n8k32Assembly(const std::string& A_layout, const std::str
           )";
     }
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -1237,12 +1249,12 @@ std::string PrintMMAm16n8k64Assembly(const std::string& A_layout, const std::str
           )";
     }
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
@@ -1303,16 +1315,16 @@ std::string PrintMMAm16n8k256Assembly(const std::string& A_layout, const std::st
           }
         )";
   }
-  asm_code = std::regex_replace(asm_code, std::regex("left_layout"), A_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("right_layout"), B_layout);
-  asm_code = std::regex_replace(asm_code, std::regex("A"), new_a_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("B"), new_b_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("C"), new_c_ref);
-  asm_code = std::regex_replace(asm_code, std::regex("D"), new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "left_layout", A_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "right_layout", B_layout);
+  asm_code = ReplaceMMAArgument(asm_code, "A", new_a_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "B", new_b_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "C", new_c_ref);
+  asm_code = ReplaceMMAArgument(asm_code, "D", new_c_ref);
   return asm_code;
 }
 
-std::string PrintPTXAssembly(const std::string& shape, const std::string& A_layout,
+std::string PrintMMAAssembly(const std::string& shape, const std::string& A_layout,
                              const std::string& B_layout, const std::string& A_dtype,
                              const std::string& B_dtype, const std::string& C_dtype,
                              const std::string& a_ref, const std::string& a_bias,
@@ -1355,7 +1367,7 @@ std::string PrintPTXAssembly(const std::string& shape, const std::string& A_layo
   /*
    * TODO: add mma.m16n8k128
    */
-  return "";
+  throw Error("Unknown PTX mma instructions.");
 }
 
 }  // namespace codegen

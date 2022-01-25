@@ -80,7 +80,7 @@ def test_gemm_mma_m8n8k4_row_col_fp64pf64fp64():
 
     A_np = np.random.uniform(-1, 1, [8, 4]).astype("float64")
     B_np = np.random.uniform(-1, 1, [8, 4]).astype("float64")
-    C_np = np.random.uniform(-1, 1, [8, 8]).astype("float64")
+    C_np = np.zeros([8, 8]).astype("float64")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -92,9 +92,8 @@ def test_gemm_mma_m8n8k4_row_col_fp64pf64fp64():
     golden = np.matmul(A_np.astype("float64"), B_np.astype("float64").T)
 
     C_numpy = C_tvm.numpy()
-    from tvm import testing
 
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -162,7 +161,7 @@ def test_gemm_mma_m8n8k4_row_row_fp16fp16fp16():
 
     A_np = np.random.uniform(-1, 1, [16, 4]).astype("float16")
     B_np = np.random.uniform(-1, 1, [4, 16]).astype("float16")
-    C_np = np.random.uniform(-1, 1, [16, 16]).astype("float16")
+    C_np = np.zeros([16, 16]).astype("float16")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -175,9 +174,7 @@ def test_gemm_mma_m8n8k4_row_row_fp16fp16fp16():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -251,7 +248,7 @@ def test_gemm_mma_m8n8k4_row_row_fp16fp16fp32():
 
     A_np = np.random.uniform(-1, 1, [16, 4]).astype("float16")
     B_np = np.random.uniform(-1, 1, [4, 16]).astype("float16")
-    C_np = np.random.uniform(-1, 1, [16, 16]).astype("float32")
+    C_np = np.zeros([16, 16]).astype("float32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -263,9 +260,8 @@ def test_gemm_mma_m8n8k4_row_row_fp16fp16fp32():
     golden = np.matmul(A_np.astype("float32"), B_np.astype("float32"))
 
     C_numpy = C_tvm.numpy()
-    from tvm import testing
 
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -326,7 +322,7 @@ def test_gemm_mma_m8n8k16_row_col_s8s8s32():
 
     A_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
-    C_np = np.random.uniform(-1, 1, [8, 8]).astype("int32")
+    C_np = np.zeros([8, 8]).astype("int32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -339,9 +335,7 @@ def test_gemm_mma_m8n8k16_row_col_s8s8s32():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -402,7 +396,7 @@ def test_gemm_mma_m8n8k16_row_col_s8u8s32():
 
     A_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("uint8")
-    C_np = np.random.uniform(-1, 1, [8, 8]).astype("int32")
+    C_np = np.zeros([8, 8]).astype("int32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -415,9 +409,7 @@ def test_gemm_mma_m8n8k16_row_col_s8u8s32():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -614,7 +606,7 @@ def test_gemm_mma_m16n8k8_row_col_fp16fp16fp32():
 
     A_np = np.random.uniform(-1, 1, [16, 8]).astype("float16")
     B_np = np.random.uniform(-1, 1, [8, 8]).astype("float16")
-    C_np = np.random.uniform(-1, 1, [16, 8]).astype("float32")
+    C_np = np.zeros([16, 8]).astype("float32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -626,9 +618,8 @@ def test_gemm_mma_m16n8k8_row_col_fp16fp16fp32():
     golden = np.matmul(A_np.astype("float32"), B_np.astype("float32").T)
 
     C_numpy = C_tvm.numpy()
-    from tvm import testing
 
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -697,7 +688,7 @@ def test_gemm_mma_m16n8k16_row_col_fp16fp16fp16():
 
     A_np = np.random.uniform(-1, 1, [16, 16]).astype("float16")
     B_np = np.random.uniform(-1, 1, [8, 16]).astype("float16")
-    C_np = np.random.uniform(-1, 1, [16, 8]).astype("float16")
+    C_np = np.zeros([16, 8]).astype("float16")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -710,9 +701,7 @@ def test_gemm_mma_m16n8k16_row_col_fp16fp16fp16():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -781,7 +770,7 @@ def test_gemm_mma_m16n8k16_row_col_fp16fp16fp32():
 
     A_np = np.random.uniform(-1, 1, [16, 16]).astype("float16")
     B_np = np.random.uniform(-1, 1, [8, 16]).astype("float16")
-    C_np = np.random.uniform(-1, 1, [16, 8]).astype("float32")
+    C_np = np.zeros([16, 8]).astype("float32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -794,9 +783,7 @@ def test_gemm_mma_m16n8k16_row_col_fp16fp16fp32():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -865,7 +852,7 @@ def test_gemm_mma_m16n8k16_row_col_s8s8s32():
 
     A_np = np.random.uniform(-10, 10, [16, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("int8")
-    C_np = np.random.uniform(-1, 1, [16, 8]).astype("int32")
+    C_np = np.zeros([16, 8]).astype("int32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -878,9 +865,7 @@ def test_gemm_mma_m16n8k16_row_col_s8s8s32():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -949,7 +934,7 @@ def test_gemm_mma_m16n8k16_row_col_s8u8s32():
 
     A_np = np.random.uniform(-10, 10, [16, 16]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 16]).astype("uint8")
-    C_np = np.random.uniform(-1, 1, [16, 8]).astype("int32")
+    C_np = np.zeros([16, 8]).astype("int32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -962,9 +947,7 @@ def test_gemm_mma_m16n8k16_row_col_s8u8s32():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -1033,7 +1016,7 @@ def test_gemm_mma_m16n8k32_row_col_s8s8s32():
 
     A_np = np.random.uniform(-10, 10, [16, 32]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 32]).astype("int8")
-    C_np = np.random.uniform(-1, 1, [16, 8]).astype("int32")
+    C_np = np.zeros([16, 8]).astype("int32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -1046,9 +1029,7 @@ def test_gemm_mma_m16n8k32_row_col_s8s8s32():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func
@@ -1117,7 +1098,7 @@ def test_gemm_mma_m16n8k32_row_col_s8u8s32():
 
     A_np = np.random.uniform(-10, 10, [16, 32]).astype("int8")
     B_np = np.random.uniform(-10, 10, [8, 32]).astype("uint8")
-    C_np = np.random.uniform(-1, 1, [16, 8]).astype("int32")
+    C_np = np.zeros([16, 8]).astype("int32")
 
     ctx = tvm.cuda()
     A_tvm = tvm.nd.array(A_np, ctx)
@@ -1130,9 +1111,7 @@ def test_gemm_mma_m16n8k32_row_col_s8u8s32():
 
     C_numpy = C_tvm.numpy()
 
-    from tvm import testing
-
-    testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
+    tvm.testing.assert_allclose(golden, C_numpy, atol=1e-3, rtol=1e-3)
 
 
 @T.prim_func

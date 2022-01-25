@@ -26,14 +26,13 @@
 
 #include <tvm/runtime/logging.h>
 
-#include <regex>
 #include <string>
 #include <tuple>
 
 namespace tvm {
 namespace codegen {
 
-std::string PrintPTXAssembly(const std::string& shape, const std::string& A_layout,
+std::string PrintMMAAssembly(const std::string& shape, const std::string& A_layout,
                              const std::string& B_layout, const std::string& A_dtype,
                              const std::string& B_dtype, const std::string& C_dtype,
                              const std::string& a_ref, const std::string& a_bias,

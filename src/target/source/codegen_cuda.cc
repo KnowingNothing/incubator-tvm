@@ -752,7 +752,7 @@ void CodeGenCUDA::VisitExpr_(const CallNode* op, std::ostream& os) {
     std::string c_ref = this->PrintExpr(op->args[10]);
     std::string c_bias = this->PrintExpr(op->args[11]);
     bool saturate = (Downcast<IntImm>(op->args[12])->value != 0);
-    std::string asm_code = PrintPTXAssembly(shape, A_layout, B_layout, A_dtype, B_dtype, C_dtype,
+    std::string asm_code = PrintMMAAssembly(shape, A_layout, B_layout, A_dtype, B_dtype, C_dtype,
                                             a_ref, a_bias, b_ref, b_bias, c_ref, c_bias, saturate);
 
     this->stream << asm_code;
