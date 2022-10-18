@@ -322,7 +322,7 @@ def mean(data, axis=None, keepdims=False, exclude=False):
     return _make.mean(data, axis, keepdims, exclude)
 
 
-def variance(data, axis=None, keepdims=False, exclude=False, unbiased=False):
+def variance(data, axis=None, keepdims=False, exclude=False, unbiased=False, with_mean=None):
     """Computes the variance of data over given axes.
 
     Parameters
@@ -347,13 +347,16 @@ def variance(data, axis=None, keepdims=False, exclude=False, unbiased=False):
     unbiased : bool
         If this is set to True, the unbiased estimation will be used.
 
+    with_mean : Optional[relay.Expr]
+        To compute variance given an already computed mean
+
     Returns
     -------
     result : relay.Expr
         The computed result.
     """
     axis = [axis] if isinstance(axis, int) else axis
-    m = mean(data, axis, True, exclude)
+    m = mean(data, axis, True, exclude) if with_mean is None else with_mean
     return _make._variance(data, m, axis, keepdims, exclude, unbiased)
 
 
@@ -392,7 +395,7 @@ def std(data, axis=None, keepdims=False, exclude=False, unbiased=False):
     return sqrt(_make._variance(data, m, axis, keepdims, exclude, unbiased))
 
 
-def mean_variance(data, axis=None, keepdims=False, exclude=False):
+def mean_variance(data, axis=None, keepdims=False, exclude=False, unbiased=False):
     """Computes the mean and variance of data over given axes.
 
     Parameters
@@ -414,6 +417,9 @@ def mean_variance(data, axis=None, keepdims=False, exclude=False):
         If `exclude` is true, reduction will be performed on the axes that are
         NOT in axis instead.
 
+    unbiased : bool
+        If this is set to True, the unbiased estimation will be used.
+
     Returns
     -------
     result : relay.Expr
@@ -421,9 +427,9 @@ def mean_variance(data, axis=None, keepdims=False, exclude=False):
     """
     axis = [axis] if isinstance(axis, int) else axis
     m = mean(data, axis, True, exclude)
-    var = _make._variance(data, m, axis, keepdims, exclude, False)
+    var = _make._variance(data, m, axis, keepdims, exclude, unbiased)
     if not keepdims:
-        m = squeeze(m)
+        m = squeeze(m, axis=axis)
     return TupleWrapper(Tuple((m, var)), 2)
 
 

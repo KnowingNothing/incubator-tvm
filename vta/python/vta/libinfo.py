@@ -59,18 +59,17 @@ def find_libvta(lib_vta, optional=False):
         Enable error check
     """
     curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-    lib_search = [
-        os.path.join(
+    tvm_library_path = os.environ.get("TVM_LIBRARY_PATH", None)
+    if tvm_library_path is None:
+        tvm_library_path = os.path.join(
             curr_path,
-            "..",
-            "..",
-            "..",
+            os.pardir,
+            os.pardir,
+            os.pardir,
             "build",
         )
-    ]
-    if os.environ.get("VTA_LIBRARY_PATH", None):
-        lib_search.append(os.environ["TVM_LIBRARY_PATH"])
-    lib_search += [os.path.join(get_vta_hw_path(), "build")]
+
+    lib_search = [tvm_library_path, os.path.join(get_vta_hw_path(), "build")]
     lib_name = _get_lib_name(lib_vta)
     lib_path = [os.path.join(x, lib_name) for x in lib_search]
     lib_found = [x for x in lib_path if os.path.exists(x)]
